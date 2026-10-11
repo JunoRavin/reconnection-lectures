@@ -1,0 +1,38 @@
+# Overview {.unnumbered}
+
+These are two self-contained computational lectures on magnetic reconnection.
+Rather than deriving reconnection rates on paper alone, we test the classic
+theory directly against nonlinear multi-fluid simulations of the
+[GEM reconnection challenge](https://doi.org/10.1029/1999JA900449)
+(Birn et al. 2001), run with [Gkeyll](https://github.com/gkeyllorg/gkeyll) and
+analyzed with [postgkyl](https://github.com/gkeyllorg/postgkyl).
+
+[Lecture 1](lectures/lecture-1-sweet-parker.ipynb): Sweet–Parker scaling in multi-fluid simulations
+: Reproduce the conservation arguments of Sweet–Parker theory, mass and energy
+  conservation through the current sheet, from a resistive five-moment
+  simulation.
+
+[Lecture 2](lectures/lecture-2-fast-reconnection.ipynb): What makes reconnection fast?
+: Measure the reconnection rate, compare it with the Sweet–Parker prediction,
+  and use an Ohm's law analysis of five- and ten-moment simulations to find what
+  makes reconnection fast.
+
+## How to use these lectures
+
+You can read the lectures here, with all figures included. To work through
+them yourself:
+
+1. [Install Gkeyll and postgkyl](install.qmd) on your laptop.
+2. [Run the two simulations](running.qmd) the lectures analyze.
+3. Open the lecture notebooks in [marimo](https://marimo.io) and work through
+   them with your own data.
+
+The lecture notebooks are plain Python files in the
+[`notebooks/`](https://github.com/JunoRavin/reconnection-lectures/tree/main/notebooks)
+folder, and the simulation input files are in
+[`inputs/`](https://github.com/JunoRavin/reconnection-lectures/tree/main/inputs).
+
+## Prerequisites
+
+The lectures assume familiarity with the Sweet–Parker model of reconnection and
+with the basics of Python and NumPy. No prior experience with Gkeyll is needed.

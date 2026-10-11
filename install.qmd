@@ -1,0 +1,18 @@
+# Installing Gkeyll and postgkyl {.unnumbered}
+
+::: {.callout-note}
+**In preparation.** These instructions are being written and tested on a fresh
+build before publication.
+:::
+
+This chapter will cover:
+
+- **Prerequisites:** a C compiler and build tools on macOS and Linux.
+- **Gkeyll:** cloning [gkeyllorg/gkeyll](https://github.com/gkeyllorg/gkeyll),
+  building its dependencies, and building only the `core` and `moments` layers
+  needed for these lectures.
+- **postgkyl:** installing [postgkyl](https://github.com/gkeyllorg/postgkyl)
+  from source into a Python environment, together with
+  [marimo](https://marimo.io) for the lecture notebooks.
+- **Checking the installation:** running a short test problem and loading its
+  output with postgkyl.

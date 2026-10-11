@@ -1,0 +1,17 @@
+# Running the simulations {.unnumbered}
+
+::: {.callout-note}
+**In preparation.** Laptop-scale versions of the input files are being prepared
+and checked against the full-resolution results shown in the lectures.
+:::
+
+The lectures analyze two simulations of the GEM reconnection problem with an
+ion-to-electron mass ratio of 100:
+
+| Run | Input file | Model |
+|-----|------------|-------|
+| `resistive_gem_mass100` | [`rt_5m_resistive_gem.lua`](https://github.com/JunoRavin/reconnection-lectures/blob/main/inputs/rt_5m_resistive_gem.lua) | Five-moment two-fluid with resistivity |
+| `10m_gem_mass100` | [`rt_10m_gem.lua`](https://github.com/JunoRavin/reconnection-lectures/blob/main/inputs/rt_10m_gem.lua) | Ten-moment two-fluid |
+
+This chapter will cover running each input file, where to put the output so the
+lecture notebooks find it, and how long each run takes on a laptop.

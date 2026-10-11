@@ -1,0 +1,9 @@
+/.quarto/
+/_book/
+**/*.quarto_ipynb
+__marimo__/
+.DS_Store
+
+# Simulation output is large and never committed
+/runs/
+*.gkyl

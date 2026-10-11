@@ -1,0 +1,132 @@
+/*-- scss:defaults --*/
+
+// WVU brand colors. Gold is an accent only (rules, underlines, borders):
+// never use it for text, since it fails contrast on white.
+$wvu-blue: #002855;
+$wvu-gold: #EAAA00;
+$wvu-gold-tint: #FCF6E5;
+$ink: #1c2430;
+$muted: #5a6472;
+$hairline: #e3e6ea;
+
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap");
+
+$font-family-sans-serif: "Source Sans 3", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+$headings-font-family: "Source Serif 4", Georgia, serif;
+$font-size-root: 17px;
+
+$body-bg: #ffffff;
+$body-color: $ink;
+$headings-color: $wvu-blue;
+$link-color: $wvu-blue;
+$link-hover-color: $wvu-blue;
+
+$navbar-bg: #ffffff;
+$navbar-fg: $wvu-blue;
+$navbar-hl: $wvu-blue;
+$footer-bg: #ffffff;
+$footer-fg: $muted;
+
+/*-- scss:rules --*/
+
+// Navigation: white bar with a gold rule underneath
+.navbar {
+  border-bottom: 3px solid $wvu-gold;
+  .navbar-title {
+    font-family: $headings-font-family;
+    font-weight: 600;
+  }
+  .nav-link.active {
+    text-decoration: underline;
+    text-decoration-color: $wvu-gold;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 0.45em;
+  }
+}
+
+// Links: blue text, thin gold underline that thickens on hover
+main a, .page-footer a {
+  text-decoration: underline;
+  text-decoration-color: rgba($wvu-gold, 0.7);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  &:hover {
+    text-decoration-color: $wvu-gold;
+    text-decoration-thickness: 2px;
+  }
+}
+
+// Section headings: no full-width rule, a short gold bar instead
+main h2 {
+  border-bottom: none;
+  margin-top: 2.2rem;
+  &::after {
+    content: "";
+    display: block;
+    width: 2.5rem;
+    height: 3px;
+    margin-top: 0.4rem;
+    background: $wvu-gold;
+  }
+}
+
+// About page (trestles template)
+.quarto-about-trestles {
+  .about-entity .about-image {
+    box-shadow: 0 2px 10px rgba($wvu-blue, 0.12);
+  }
+  .about-entity .about-links .about-link {
+    color: $wvu-blue;
+    border-color: $hairline;
+    text-decoration: none;
+    &:hover {
+      border-color: $wvu-gold;
+      background: $wvu-gold-tint;
+    }
+  }
+}
+.quarto-title .subtitle {
+  color: $muted;
+  font-family: $font-family-sans-serif;
+  font-size: 1.15rem;
+}
+
+// "Under construction" note: light gold tint with dark text
+.under-construction {
+  margin: 1.5rem 0;
+  padding: 0.8rem 1rem;
+  border-left: 4px solid $wvu-gold;
+  background: $wvu-gold-tint;
+  color: $ink;
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Publication lists
+main ol li {
+  margin-bottom: 0.65rem;
+  line-height: 1.45;
+}
+
+// Year / entry lists (teaching), CV style with dates in a left column
+.cv-list dl {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  column-gap: 1rem;
+  row-gap: 0.9rem;
+  dt {
+    color: $muted;
+    font-weight: 400;
+  }
+  dd {
+    margin: 0;
+  }
+  @media (max-width: 575.98px) {
+    grid-template-columns: 1fr;
+    row-gap: 0.2rem;
+    dd {
+      margin-bottom: 0.8rem;
+    }
+  }
+}

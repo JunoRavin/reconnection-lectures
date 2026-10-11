@@ -1,0 +1,32 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Magnetic Reconnection with Gkeyll"
+  subtitle: "Computational lectures on Sweet–Parker and fast reconnection"
+  author: "James (Jimmy) Juno"
+  site-url: https://junoravin.github.io/reconnection-lectures
+  repo-url: https://github.com/JunoRavin/reconnection-lectures
+  repo-actions: [issue]
+  chapters:
+    - index.qmd
+    - part: "Setup"
+      chapters:
+        - install.qmd
+        - running.qmd
+    - part: "Lectures"
+      chapters:
+        - lectures/lecture-1-sweet-parker.ipynb
+        - lectures/lecture-2-fast-reconnection.ipynb
+  page-footer:
+    left: "© 2026 [James Juno](https://junoravin.github.io)"
+    right: "Built with [Quarto](https://quarto.org) and [marimo](https://marimo.io)"
+
+format:
+  html:
+    theme: [cosmo, styles/wvu.scss]
+    number-sections: false
+    code-fold: true
+    code-summary: "Show code"
+    toc-depth: 3
