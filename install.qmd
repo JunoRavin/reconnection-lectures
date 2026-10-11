@@ -1,18 +1,243 @@
 # Installing Gkeyll and postgkyl {.unnumbered}
 
-::: {.callout-note}
-**In preparation.** These instructions are being written and tested on a fresh
-build before publication.
+You will install two things:
+
+- **Gkeyll**, the simulation code. We build only its `core` and `moments`
+  layers, which contain the multi-fluid solvers used in these lectures.
+- **postgkyl**, the Python package for reading and plotting Gkeyll output,
+  together with [marimo](https://marimo.io) for the lecture notebooks.
+
+The instructions below have been tested on macOS (Apple silicon) and on
+Ubuntu 24.04. On Windows, first install the
+[Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/install)
+with `wsl --install`, then follow the Linux instructions inside the Ubuntu
+terminal it provides.
+
+Expect the whole installation to take 10 to 30 minutes, depending on your
+laptop (most of it is spent building Gkeyll's dependencies), and to use about
+3 GB of disk space.
+
+## 1. Prerequisites
+
+::: {.panel-tabset group="os"}
+
+## macOS
+
+Install Apple's command-line developer tools (compilers, `git`, `make`):
+
+```bash
+xcode-select --install
+```
+
+Install [Homebrew](https://brew.sh) if you do not already have it, then use it
+to install CMake:
+
+```bash
+brew install cmake
+```
+
+## Linux / WSL
+
+```bash
+sudo apt update
+sudo apt install build-essential gfortran cmake clang git curl rsync
+```
+
 :::
 
-This chapter will cover:
+Finally, install [uv](https://docs.astral.sh/uv/), which we use to set up
+Python (it works the same way on both systems):
 
-- **Prerequisites:** a C compiler and build tools on macOS and Linux.
-- **Gkeyll:** cloning [gkeyllorg/gkeyll](https://github.com/gkeyllorg/gkeyll),
-  building its dependencies, and building only the `core` and `moments` layers
-  needed for these lectures.
-- **postgkyl:** installing [postgkyl](https://github.com/gkeyllorg/postgkyl)
-  from source into a Python environment, together with
-  [marimo](https://marimo.io) for the lecture notebooks.
-- **Checking the installation:** running a short test problem and loading its
-  output with postgkyl.
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Open a new terminal window afterwards so that the `uv` command is found.
+
+## 2. Build Gkeyll
+
+Download the source code into your home folder:
+
+```bash
+cd ~
+git clone https://github.com/gkeyllorg/gkeyll.git
+cd gkeyll
+```
+
+### Dependencies
+
+Gkeyll needs a few libraries (SuperLU, OpenMPI, LuaJIT, and on Linux,
+OpenBLAS). The `install-deps` script downloads and builds them into
+`~/gkylsoft`:
+
+::: {.panel-tabset group="os"}
+
+## macOS
+
+```bash
+export MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d. -f1-2)
+cd install-deps
+./mkdeps.sh --build-superlu=yes --build-openmpi=yes --build-luajit=yes --prefix=$HOME/gkylsoft
+cd ..
+```
+
+The first line tells the LuaJIT build which version of macOS to target (your
+own); without it, LuaJIT does not build.
+
+## Linux / WSL
+
+```bash
+cd install-deps
+./mkdeps.sh --build-openblas=yes --build-superlu=yes --build-openmpi=yes --build-luajit=yes --prefix=$HOME/gkylsoft
+cd ..
+```
+
+:::
+
+The script keeps going even if one library fails to build, so check that
+they are all there before moving on:
+
+```bash
+ls ~/gkylsoft
+```
+
+You should see `luajit`, `openmpi`, and `superlu` (plus `OpenBLAS` on Linux),
+along with a few versioned folders. If one is missing, scroll back through the
+script's output to find the error.
+
+### Configure and compile
+
+Configure the build for the moments solvers only (`--app=moments`), with MPI
+for running in parallel and Lua for reading input files:
+
+::: {.panel-tabset group="os"}
+
+## macOS
+
+```bash
+./configure --prefix=$HOME/gkylsoft --use-mpi=yes --use-lua=yes --app=moments
+```
+
+## Linux / WSL
+
+```bash
+./configure CC=clang --prefix=$HOME/gkylsoft --use-mpi=yes --use-lua=yes --mpi-inc=$HOME/gkylsoft/openmpi/include --app=moments
+```
+
+:::
+
+Then compile and install. The number after `-j` is how many files to compile
+at once; use the number of cores in your laptop, or fewer if it has less than
+16 GB of memory:
+
+```bash
+make install -j 4
+```
+
+::: {.callout-warning collapse="true"}
+## Linux on an ARM processor
+
+If your Linux machine has an ARM processor rather than an Intel or AMD one
+(for example a Windows laptop with a Snapdragon chip, or a Linux virtual
+machine on an Apple silicon Mac; check with `uname -m`, which prints
+`aarch64`), the moments solver currently fails to compile with errors about
+`xmmintrin.h`. Run this from the `gkeyll` folder, then `make install -j 4`
+again:
+
+```bash
+sed -i 's/defined(__arm64__) || defined(__powerpc64__)/defined(__arm64__) || defined(__aarch64__) || defined(__powerpc64__)/' core/zero/gkyl_dflt.h
+```
+:::
+
+::: {.callout-note collapse="true"}
+## How this differs from Gkeyll's own instructions
+
+Gkeyll's README builds with "machine files" such as
+`./machines/mkdeps.macos.sh`. Those build every solver (including the much
+larger kinetic and gyrokinetic ones) and download atomic data that only the
+gyrokinetic solver uses. The commands above build the same dependencies but
+only the solvers these lectures need.
+:::
+
+### Add Gkeyll to your path
+
+Tell your shell where the `gkeyll` and `mpirun` commands live. On macOS, add
+this line to `~/.zshrc`; on Linux and WSL, add it to `~/.bashrc`:
+
+```bash
+export PATH="$HOME/gkylsoft/gkeyll/bin:$HOME/gkylsoft/openmpi/bin:$PATH"
+```
+
+Open a new terminal and check that it worked:
+
+```bash
+gkeyll -v
+```
+
+You should see something like:
+
+```
+This is the Gkeyll code. See gkeyll.rtfd.io for details.
+Type 'gkyl -h' for help.
+
+Built with git changeset "d1aa4ef33ec7"
+Built on "2026-10-11 22:01:46 UTC"
+Built without CUDA
+```
+
+## 3. Install postgkyl and marimo
+
+Download these lectures, which include the notebooks and simulation input
+files, and create a Python environment inside the lecture folder:
+
+```bash
+cd ~
+git clone https://github.com/JunoRavin/reconnection-lectures.git
+cd reconnection-lectures
+uv venv --python 3.12 --managed-python
+source .venv/bin/activate
+```
+
+Download postgkyl next to the lectures and install it, together with marimo,
+into that environment. Installing postgkyl compiles a small extension that
+connects it to Gkeyll's data format, so this step takes a minute or so:
+
+```bash
+git clone https://github.com/gkeyllorg/postgkyl.git ../postgkyl
+uv pip install ../postgkyl marimo
+```
+
+Whenever you come back to the lectures in a new terminal, reactivate the
+environment from inside the `reconnection-lectures` folder with
+`source .venv/bin/activate`.
+
+## 4. Check your installation
+
+Gkeyll comes with a small version of the GEM reconnection problem that the
+lectures study. Run it in a scratch folder (this takes well under a minute):
+
+```bash
+mkdir -p ~/gkeyll-check && cd ~/gkeyll-check
+cp ~/gkeyll/moments/luareg/rt_10m_gem.lua .
+gkeyll rt_10m_gem.lua
+```
+
+When it finishes, the folder contains `.gkyl` output files. With the lecture
+environment active, load the final electromagnetic field with postgkyl:
+
+```bash
+python -c "import postgkyl as pg; print(pg.load('rt_10m_gem-field_1.gkyl').get_values().shape)"
+```
+
+This should print
+
+```
+(128, 64, 8)
+```
+
+that is, the field on the 128 × 64 grid of this test problem, with eight
+components: the three components each of the electric and magnetic fields, and
+two potentials Gkeyll uses to keep the divergence constraints satisfied.
+
+If you see this, everything is installed and you are ready to
+[run the simulations](running.qmd).

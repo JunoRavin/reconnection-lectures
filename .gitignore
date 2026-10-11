@@ -7,3 +7,6 @@ __marimo__/
 # Simulation output is large and never committed
 /runs/
 *.gkyl
+
+# Python environment created by the install instructions
+.venv/

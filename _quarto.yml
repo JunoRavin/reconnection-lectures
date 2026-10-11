@@ -29,4 +29,5 @@ format:
     number-sections: false
     code-fold: true
     code-summary: "Show code"
+    code-overflow: wrap
     toc-depth: 3
