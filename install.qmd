@@ -1,17 +1,14 @@
 # Installing Gkeyll and postgkyl {.unnumbered}
 
-You will install two things:
+You will install Gkeyll, the simulation code, and postgkyl, the Python package
+for reading and plotting its output, along with [marimo](https://marimo.io)
+for the lecture notebooks. We build only Gkeyll's `core` and `moments` layers,
+which contain the multi-fluid solvers these lectures use.
 
-- **Gkeyll**, the simulation code. We build only its `core` and `moments`
-  layers, which contain the multi-fluid solvers used in these lectures.
-- **postgkyl**, the Python package for reading and plotting Gkeyll output,
-  together with [marimo](https://marimo.io) for the lecture notebooks.
-
-The instructions below are
-[tested automatically every week](https://github.com/JunoRavin/reconnection-lectures/actions/workflows/install-test.yml),
+[We test these instructions every week](https://github.com/JunoRavin/reconnection-lectures/actions/workflows/install-test.yml)
 with the latest version of Gkeyll, on macOS 15 (Apple silicon) and on Ubuntu
-24.04 and 26.04 (with both Intel/AMD and ARM processors). They have not been
-tested on Intel Macs.
+24.04 and 26.04 (Intel/AMD and ARM processors). We have not tested them on an
+Intel Mac.
 
 On Windows, first install the
 [Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/install):
@@ -21,8 +18,8 @@ password. Follow the Linux instructions below, running every command in that
 Ubuntu terminal, not in PowerShell.
 
 Expect the whole installation to take 15 to 40 minutes, depending on your
-laptop (most of it is spent building Gkeyll's dependencies), and to use about
-4 GB of disk space.
+laptop, most of it building Gkeyll's dependencies. It uses about 4 GB of disk
+space.
 
 ## 1. Prerequisites
 
@@ -51,8 +48,8 @@ If this prints `command not found`, install Homebrew by pasting the install
 command from <https://brew.sh> into your terminal. On a Mac with Apple
 silicon, Homebrew installs itself into a folder (`/opt/homebrew`) that your
 terminal does not search for commands, so `brew` is still not found until you
-add that folder to your path. The installer ends by listing these commands
-under "Next steps"; run them yourself to be sure:
+add that folder to your path. The installer lists the commands that do this
+under "Next steps" but does not run them, so run them now:
 
 ```bash
 echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
@@ -93,16 +90,16 @@ Open a new terminal window so that the `uv` command is found, and check that
 
 Building Gkeyll involves two folders with similar names:
 
-- **`~/gkeyll`** holds the source code, which you download below. Every build
+- `~/gkeyll` holds the source code, which you download below. Every build
   command runs inside this folder or its `install-deps` subfolder.
-- **`~/gkylsoft`** is where the build installs the finished programs and
+- `~/gkylsoft` is where the build installs the finished programs and
   libraries. You never run build commands there; you only look inside it to
-  check that things were installed.
+  check what the build installed.
 
-Each command block in this section starts by moving into the folder it needs,
-so always run the whole block, including its first `cd` line. That way the
-commands also work in a new terminal window, for example if you come back to
-the installation the next day.
+Each command block in this section begins with a `cd` into the folder it
+needs, so run the whole block, including that first line. The blocks then
+work in a new terminal window too, for example if you come back to the
+installation the next day.
 
 Download the source code into your home folder:
 
@@ -111,8 +108,8 @@ cd ~
 git clone --depth 1 https://github.com/gkeyllorg/gkeyll.git
 ```
 
-`--depth 1` downloads only the latest version of the code, not its whole
-history, which makes the download about a third smaller. You can still update
+`--depth 1` skips the code's history, which makes the download about a third
+smaller. You can still update
 it later (see [Updating Gkeyll](#updating-gkeyll)). If `git` reports that
 `gkeyll` already exists, you downloaded it on an earlier attempt and can go
 straight on to the next step.
@@ -145,8 +142,8 @@ cd ~/gkeyll/install-deps
 
 :::
 
-This is the longest step, typically 5 to 20 minutes depending on your laptop.
-It prints thousands of lines, including many warnings, which are normal; it
+This is the longest step: 5 to 20 minutes, depending on your laptop. It
+prints thousands of lines, including many warnings, which are normal, and it
 is done when your prompt comes back.
 
 The script keeps going even if one library fails to build, and a library's
@@ -175,10 +172,10 @@ script's output to find the first error.
 
 ### Configure the build
 
-Gkeyll's `configure` script records how Gkeyll should be built: which solvers
-to include, which optional features to turn on, and where to find the
-libraries you just built. It saves these settings in a file, `config.mak`,
-which the compile step reads. It does not compile anything itself.
+Gkeyll's `configure` script records your build settings, such as which
+solvers to include and where to find the libraries you just built, in a file
+called `config.mak`. The compile step reads that file; `configure` itself
+compiles nothing.
 
 Run it from the `~/gkeyll` folder, not from `install-deps` (where the previous
 step left your terminal) or from `~/gkylsoft`:
@@ -225,9 +222,9 @@ If you instead get an error saying `no such file or directory`, your terminal
 is in a different folder; run the whole block again, starting with
 `cd ~/gkeyll`.
 
-`configure` does not check that the libraries are actually in `~/gkylsoft`.
-A missing one only shows up as an error in the compile step, which is why you
-checked with `ls` above. To change a setting, run `configure` again; it
+`configure` does not check that the libraries are in `~/gkylsoft`. A missing
+one only shows up as an error in the compile step, which is why you checked
+for them with `ls` above. To change a setting, run `configure` again; it
 replaces `config.mak`.
 
 ### Compile and install
@@ -265,7 +262,7 @@ only the solvers these lectures need.
 
 Your terminal finds commands by searching a list of folders called your
 *path*. The `gkeyll` and `mpirun` commands are in folders inside `~/gkylsoft`
-that are not on it yet. This command adds them, by appending a line to the
+that are not on it yet. This command adds them by appending a line to the
 file your terminal reads each time it starts (`~/.zshrc` on macOS, `~/.bashrc`
 on Linux and WSL):
 
@@ -379,7 +376,7 @@ If you see this, everything is installed and you are ready to
 ## Updating Gkeyll
 
 These instructions install the latest version of Gkeyll, which changes
-often. If you are asked to update it, for example to pick up a fix, run:
+often. To update it, for example to pick up a fix, run:
 
 ```bash
 cd ~/gkeyll
@@ -388,5 +385,5 @@ make install -j 4
 ```
 
 This downloads the changes and recompiles only the files they affect. You do
-not need to build the dependencies or run `configure` again: your settings are
-kept in `config.mak`, which `git pull` leaves alone.
+not need to build the dependencies or run `configure` again, because
+`git pull` leaves your `config.mak` alone.
