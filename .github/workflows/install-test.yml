@@ -1,0 +1,92 @@
+# Follow the installation chapter (install.qmd) from scratch on each system it
+# supports. scripts/test-install.sh runs every command block for that system,
+# in page order, each in a new shell, then checks the outputs the chapter says
+# to expect.
+#
+# Runs every week, because the chapter installs the latest Gkeyll and an
+# upstream change can break it; on pull requests and pushes that touch the
+# chapter or this test; and on demand from the Actions tab.
+name: Test installation
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"  # Mondays, 06:17 UTC
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - install.qmd
+      - scripts/install-blocks.awk
+      - scripts/test-install.sh
+      - .github/workflows/install-test.yml
+  push:
+    branches: [main]
+    paths:
+      - install.qmd
+      - scripts/install-blocks.awk
+      - scripts/test-install.sh
+      - .github/workflows/install-test.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: install-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    # A fresh Ubuntu container, so that the chapter's own apt-get line has to
+    # install everything the build needs.
+    container: ${{ matrix.image }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: "Ubuntu 24.04 (x86-64)", id: ubuntu-24.04-x86-64, image: "ubuntu:24.04", runner: ubuntu-24.04 }
+          - { name: "Ubuntu 24.04 (ARM)", id: ubuntu-24.04-arm, image: "ubuntu:24.04", runner: ubuntu-24.04-arm }
+          - { name: "Ubuntu 26.04 (x86-64)", id: ubuntu-26.04-x86-64, image: "ubuntu:26.04", runner: ubuntu-24.04 }
+          - { name: "Ubuntu 26.04 (ARM)", id: ubuntu-26.04-arm, image: "ubuntu:26.04", runner: ubuntu-24.04-arm }
+    steps:
+      - uses: actions/checkout@v7
+
+      # A new WSL Ubuntu has a regular user with sudo rights, and sudo, tzdata
+      # and CA certificates already installed; a bare container has none.
+      - name: Set up the container like a new WSL install
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y sudo tzdata ca-certificates
+          useradd --create-home --shell /bin/bash student
+          echo 'student ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/student
+
+      - name: Follow the installation chapter
+        run: sudo -u student -i bash "$GITHUB_WORKSPACE/scripts/test-install.sh" linux
+
+      - name: Save the logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: install-logs-${{ matrix.id }}
+          path: /home/student/install-test-logs
+
+  macos:
+    name: macOS 15 (Apple silicon)
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Follow the installation chapter
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          INSTALL_TEST_LOGS: ${{ runner.temp }}/install-test-logs
+        run: bash scripts/test-install.sh macos
+
+      - name: Save the logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: install-logs-macos-15
+          path: ${{ runner.temp }}/install-test-logs
