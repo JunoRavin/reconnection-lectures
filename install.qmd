@@ -7,9 +7,11 @@ You will install two things:
 - **postgkyl**, the Python package for reading and plotting Gkeyll output,
   together with [marimo](https://marimo.io) for the lecture notebooks.
 
-The instructions below were last tested in November 2026 on macOS 15 (Apple
-silicon) and on Ubuntu 26.04 on an ARM processor. They have not been tested on
-Intel Macs.
+The instructions below are
+[tested automatically every week](https://github.com/JunoRavin/reconnection-lectures/actions/workflows/install-test.yml),
+with the latest version of Gkeyll, on macOS 15 (Apple silicon) and on Ubuntu
+24.04 and 26.04 (with both Intel/AMD and ARM processors). They have not been
+tested on Intel Macs.
 
 On Windows, first install the
 [Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/install):
