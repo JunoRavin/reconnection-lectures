@@ -232,19 +232,43 @@ def _(mo):
 @app.cell
 def _(mo, pg):
     import os
+    import re
     from pathlib import Path
 
-    # Simulation output lives in ../runs next to this notebook, or wherever GEM_DATA_DIR points
+    # Simulation output lives in runs/ in the lecture folder, or wherever GEM_DATA_DIR points.
+    # Each simulation has its own subfolder; the last part of each path is the file name
+    # prefix Gkeyll gives its output files.
     DATA_DIR = Path(os.environ.get("GEM_DATA_DIR", mo.notebook_dir() / ".." / "runs"))
+    RUNS = {"5m": "5m_gem_mass100/rt_5m_gem", "10m": "10m_gem_mass100/rt_10m_gem"}
 
-    def get_Gdata(pre, frame):
-        data_elc = pg.load(str(DATA_DIR / ("%s-elc_%d.gkyl" % (pre, frame))))
-        data_ion = pg.load(str(DATA_DIR / ("%s-ion_%d.gkyl" % (pre, frame))))
-        data_field = pg.load(str(DATA_DIR / ("%s-field_%d.gkyl" % (pre, frame))))
+    def available_frames(run):
+        # Frames whose electron, ion, and field files all exist, so the notebook works with
+        # whatever output a run has written so far.
+        path = DATA_DIR / RUNS[run]
+        found = []
+        for f in path.parent.glob(path.name + "-field_*.gkyl"):
+            m = re.fullmatch(re.escape(path.name) + r"-field_(\d+)\.gkyl", f.name)
+            if m and all(Path(f"{path}-{s}_{m[1]}.gkyl").exists() for s in ("elc", "ion")):
+                found.append(int(m[1]))
+        return sorted(found)
 
+    def get_Gdata(run, frame):
+        path = DATA_DIR / RUNS[run]
+        data_elc = pg.load(f"{path}-elc_{frame}.gkyl")
+        data_ion = pg.load(f"{path}-ion_{frame}.gkyl")
+        data_field = pg.load(f"{path}-field_{frame}.gkyl")
         return data_elc, data_ion, data_field
 
-    return (get_Gdata,)
+    frames_5m = available_frames("5m")
+    mo.stop(
+        not frames_5m,
+        mo.callout(mo.md(
+            f"**No 5-moment output found.** This notebook looks for `{RUNS['5m']}-*.gkyl` "
+            f"in `{DATA_DIR}`. See *Running the simulations* for how to produce it, or set "
+            "`GEM_DATA_DIR` to the folder that holds your runs."
+        ), kind="warn"),
+    )
+    return frames_5m, get_Gdata
 
 
 @app.function
@@ -293,8 +317,8 @@ def _(mo):
 
 
 @app.cell
-def _(get_Gdata):
-    _data_elc, data_ion, data_field = get_Gdata('resistive_gem_mass100/rt_5m_resistive_gem', 0)
+def _(frames_5m, get_Gdata):
+    _data_elc, data_ion, data_field = get_Gdata("5m", frames_5m[0])
     r_coords, r_fluid_elc, r_fluid_ion, r_field = read_data(_data_elc, data_ion, data_field)
     return r_coords, r_field, r_fluid_elc, r_fluid_ion
 
@@ -373,15 +397,23 @@ def _(mo):
 
     Let's look at the simulation later in time to see the fully developed reconnection. You can feel free to switch between visualizing the 10 moment and 5 moment data, or even adding your own calls to the read and plot routines to visualize the development in time.
 
-    **We have written out the data every $\Delta t_{IO} = 0.5 \Omega_{ci}^{-1}$ to time $t_{end} = 30 \Omega_{ci}^{-1}$ for a total of 60 frames**.
+    **We have written out the data every $\Delta t_{IO} = 0.5 \Omega_{ci}^{-1}$ to time $t_{end} = 30 \Omega_{ci}^{-1}$ for a total of 60 frames**. The slider below picks which frame the rest of this lecture looks at; it starts at the last frame your simulation has written.
     """)
     return
 
 
 @app.cell
-def _(get_Gdata):
-    _data_elc, data_ion_1, data_field_1 = get_Gdata('resistive_gem_mass100/rt_5m_resistive_gem', 60)
+def _(frames_5m, mo):
+    frame_slider = mo.ui.slider(steps=frames_5m, value=frames_5m[-1], label="Frame", show_value=True)
+    frame_slider
+    return (frame_slider,)
+
+
+@app.cell
+def _(frame_slider, get_Gdata, mo, omega_ci):
+    _data_elc, data_ion_1, data_field_1 = get_Gdata("5m", frame_slider.value)
     r_coords_1, r_fluid_elc_1, r_fluid_ion_1, r_field_1 = read_data(_data_elc, data_ion_1, data_field_1)
+    mo.output.replace(mo.md(f"Frame {frame_slider.value}: $t = {data_field_1.ctx['time'] * omega_ci:.1f}\\, \\Omega_{{ci}}^{{-1}}$"))
     return (
         data_field_1,
         data_ion_1,

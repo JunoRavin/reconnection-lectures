@@ -1,6 +1,4 @@
 -- Geospace Environmental Modeling (GEM) magnetic reconnection test for the 5-moment equations.
--- Test includes explicit resistivity with input parameter collisionFactor setting the ratio of the
--- collision time, tau_ei, to the inverse electron plasma frequency, omega_pe^{-1}. 
 -- Input parameters match the equilibrium and initial conditions in Section 2, from the article:
 -- J. Birn et al. (2001), "Geospace Environmental Modeling (GEM) Magnetic Reconnection Challenge",
 -- Journal of Geophysical Research: Space Physics, Volume 106 (A3): 3715-3719.
@@ -32,8 +30,6 @@ B0 = 0.5 -- Reference magnetic field strength. Sets ratio of vAe/c.
 beta = 1.0 -- Plasma beta.
 lambda = 0.5 * di -- Wavelength.
 omega_ci = charge_ion * B0 / mass_ion -- Ion cyclotron frequency. 
-friction_Z = 1.0; -- Ionization number for frictional sources.
-friction_Lambda_ee = 2.0e5; -- Electron-electron plasma parameter for computing Coulomb logarithm.
 
 -- Derived physical quantities (using normalized code units).
 psi0 = 0.1 * B0 * di -- Reference magnetic scalar potential.
@@ -43,11 +39,20 @@ Te_frac = 1.0 / (1.0 + Ti_over_Te) -- Fraction of total temperature from electro
 T_tot = beta * (B0 * B0) / 2.0 / n0 -- Total temperature.
 
 -- Simulation parameters.
-Nx = 1344 -- Cell count (x-direction).
-Ny = 672 -- Cell count (y-direction).
+Nx = 448 -- Cell count (x-direction).
+Ny = 224 -- Cell count (y-direction).
 Lx = 25.6 * di -- Domain size (x-direction).
 Ly = 12.8 * di -- Domain size (y-direction).
 cfl_frac = 1.0 -- CFL coefficient.
+
+-- Parallel decomposition. When you start Gkeyll with "mpirun -np N", Open MPI
+-- tells each of the N processes how many there are (OMPI_COMM_WORLD_SIZE);
+-- without mpirun, Gkeyll runs as a single process. decompCuts splits the
+-- domain into cuts_x pieces along x and cuts_y pieces along y, one piece per
+-- process, so cuts_x * cuts_y must equal N.
+num_procs = tonumber(os.getenv("OMPI_COMM_WORLD_SIZE") or "1")
+decomp_for_procs = { [1] = { 1, 1 }, [2] = { 2, 1 }, [4] = { 2, 2 }, [8] = { 4, 2 } }
+decomp_cuts = decomp_for_procs[num_procs] or { num_procs, 1 }
 
 t_end = 30.0/omega_ci -- Final simulation time.
 num_frames = 60 -- Number of output frames.
@@ -68,14 +73,7 @@ momentApp = Moments.App.new {
   upper = { 0.5 * Lx, 0.5 * Ly },
   cells = { Nx, Ny },
   cflFrac = cfl_frac,
-  decompCuts = {56, 32}, 
-
-  -- Collision time is Lambda_ee/log(Lambda_ee) bigger than 
-  -- normalized time scale (inverse electron plasma frequency). 
-  collisionFactor = friction_Lambda_ee, 
-  -- Set reference electron temperature to get Te^{3/2} scaling 
-  -- correct for collision time.
-  referenceElcTemp = Te_frac * T_tot, 
+  decompCuts = decomp_cuts, 
 
   -- Boundary conditions for configuration space.
   periodicDirs = { 1 }, -- Periodic directions (x-direction only).
@@ -103,11 +101,6 @@ momentApp = Moments.App.new {
       return rhoe, mome_x, mome_y, mome_z, Ee_tot
     end,
 
-    hasFriction = true, 
-    useExplicitFriction = true, 
-    frictionZ = friction_Z, 
-    frictionLambdaee = friction_Lambda_ee, 
-
     evolve = true, -- Evolve species?
     bcy = { G0.SpeciesBc.bcWall, G0.SpeciesBc.bcWall } -- Wall boundary conditions (y-direction).
   },
@@ -134,11 +127,6 @@ momentApp = Moments.App.new {
 
       return rhoi, momi_x, momi_y, momi_z, Ei_tot
     end,
-
-    hasFriction = true, 
-    useExplicitFriction = true, 
-    frictionZ = friction_Z, 
-    frictionLambdaee = friction_Lambda_ee, 
 
     evolve = true, -- Evolve species?
     bcy = { G0.SpeciesBc.bcWall, G0.SpeciesBc.bcWall } -- Wall boundary conditions (y-direction).
