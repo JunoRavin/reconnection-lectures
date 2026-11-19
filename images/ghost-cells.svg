@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 290" role="img" aria-labelledby="gtitle gdesc" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title id="gtitle">Ghost cells at the boundary between two processes</title>
+  <desc id="gdesc">Close-up of the cut between process 0 and process 1, pulled apart. Each process holds its own grid cells plus two extra columns of ghost cells on the side facing its neighbour. Before every time step, process 1 sends its two edge columns into process 0's ghost cells, and process 0 sends its two edge columns into process 1's ghost cells, so each process can update the cells along its edge.</desc>
+  <defs>
+    <pattern id="ggrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24,0 L0,0 0,24" fill="none" stroke="#666" stroke-width="0.8"/>
+    </pattern>
+    <marker id="gah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#222"/>
+    </marker>
+  </defs>
+
+  <!-- Process 0: own cells, then 2 ghost columns holding copies of process 1's edge -->
+  <text x="192" y="86" text-anchor="middle" font-size="15" font-weight="600" fill="#2b4a6b">process 0</text>
+  <rect x="96" y="96" width="192" height="120" fill="#4E79A7" fill-opacity="0.25"/>
+  <rect x="288" y="96" width="48" height="120" fill="#F28E2B" fill-opacity="0.18"/>
+  <rect x="96" y="96" width="240" height="120" fill="url(#ggrid)"/>
+  <rect x="96" y="96" width="192" height="120" fill="none" stroke="#4E79A7" stroke-width="2"/>
+  <rect x="288" y="96" width="48" height="120" fill="none" stroke="#F28E2B" stroke-width="2" stroke-dasharray="5 3"/>
+
+  <!-- Process 1: 2 ghost columns holding copies of process 0's edge, then own cells -->
+  <text x="768" y="86" text-anchor="middle" font-size="15" font-weight="600" fill="#8a4a0f">process 1</text>
+  <rect x="624" y="96" width="48" height="120" fill="#4E79A7" fill-opacity="0.18"/>
+  <rect x="672" y="96" width="192" height="120" fill="#F28E2B" fill-opacity="0.25"/>
+  <rect x="624" y="96" width="240" height="120" fill="url(#ggrid)"/>
+  <rect x="672" y="96" width="192" height="120" fill="none" stroke="#F28E2B" stroke-width="2"/>
+  <rect x="624" y="96" width="48" height="120" fill="none" stroke="#4E79A7" stroke-width="2" stroke-dasharray="5 3"/>
+
+  <!-- Label for the ghost columns -->
+  <text x="480" y="161" text-anchor="middle" font-size="14" fill="#222">ghost cells</text>
+  <line x1="436" y1="156" x2="342" y2="156" stroke="#222" stroke-width="1.5" marker-end="url(#gah)"/>
+  <line x1="524" y1="156" x2="618" y2="156" stroke="#222" stroke-width="1.5" marker-end="url(#gah)"/>
+
+  <!-- Exchange: process 1's edge columns are copied into process 0's ghost cells, and the reverse -->
+  <text x="504" y="44" text-anchor="middle" font-size="14" fill="#222">process 1 sends its 2 edge columns</text>
+  <path d="M696,92 C696,52 312,52 312,92" fill="none" stroke="#222" stroke-width="1.8" marker-end="url(#gah)"/>
+  <text x="456" y="282" text-anchor="middle" font-size="14" fill="#222">process 0 sends its 2 edge columns</text>
+  <path d="M264,220 C264,260 648,260 648,220" fill="none" stroke="#222" stroke-width="1.8" marker-end="url(#gah)"/>
+</svg>

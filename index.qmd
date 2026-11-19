@@ -9,8 +9,7 @@ analyzed with [postgkyl](https://github.com/gkeyllorg/postgkyl).
 
 [Lecture 1](lectures/lecture-1-sweet-parker.ipynb): Sweet–Parker scaling in multi-fluid simulations
 : Reproduce the conservation arguments of Sweet–Parker theory, mass and energy
-  conservation through the current sheet, from a resistive five-moment
-  simulation.
+  conservation through the current sheet, from a five-moment simulation.
 
 [Lecture 2](lectures/lecture-2-fast-reconnection.ipynb): What makes reconnection fast?
 : Measure the reconnection rate, compare it with the Sweet–Parker prediction,
@@ -24,7 +23,7 @@ them yourself:
 
 1. [Install Gkeyll and postgkyl](install.qmd) on your laptop.
 2. [Run the two simulations](running.qmd) the lectures analyze.
-3. Open the lecture notebooks in [marimo](https://marimo.io) and work through
+3. [Open the lecture notebooks](running.qmd#open-the-lecture-notebooks) in [marimo](https://marimo.io) and work through
    them with your own data.
 
 The lecture notebooks are plain Python files in the
