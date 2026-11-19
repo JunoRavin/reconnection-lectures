@@ -45,18 +45,18 @@ def _(mo):
     \begin{align}
       \frac{\partial \rho_s \mathbf{u}_s}{\partial t} + \nabla \cdot \left ( \rho_s \mathbf{u}_s \mathbf{u}_s + \mathbf{P}_s \right ) = \frac{q_s}{m_s} \left ( \rho_s \mathbf{E} + \rho_s \mathbf{u}_s \times \mathbf{B} \right ) + \mathbf{R}
     \end{align}
-    where $\mathbf{P}_s$ is the pressure tensor of species $s$ and $\mathbf{R}$ is an as-yet-unspecified inter-species friction term. For at least one system of equations we will solve today, we will take the inter-species friction to be (for an electron-singly ionized ion plasma):
+    where $\mathbf{P}_s$ is the pressure tensor of species $s$ and $\mathbf{R}$ is an inter-species friction term. Collisions between electrons and singly charged ions produce a friction
     \begin{align}
       \mathbf{R}_{ei} & = \frac{\rho_e}{\tau_{ei}} \left (\mathbf{u}_e - \mathbf{u}_i \right ),  \\
       \tau_{ei} & = \frac{6 \sqrt{2} \pi^{\frac{3}{2}} \epsilon_0^2 m_i \sqrt{m_e} T_e^{\frac{3}{2}}}{\ln \Lambda e^4 \rho_i}.
     \end{align}
-    If we assume $n_i \approx n_e$, we can see how we can rearrange this inter-species friction term into a more familiar form
+    If we assume $n_i \approx n_e$, we can rearrange this friction into a more familiar form:
     \begin{align}
       \mathbf{R}_{ei} & = \frac{\ln \Lambda e^3 \sqrt{m_e} n}{6 \sqrt{2} \pi^{\frac{3}{2}} \epsilon_0^2 T_e^{\frac{3}{2}}} \left (en\mathbf{u}_e - en\mathbf{u}_i \right ) \\
       & =  \frac{\ln \Lambda}{6 \sqrt{2} \pi^{\frac{3}{2}}} \frac{\omega_{pe}}{e n \lambda_{De}^3} \left (en\mathbf{u}_e - en\mathbf{u}_i \right ) \\
       & = -\eta \mathbf{J}
     \end{align}
-    **We will not assume $n_i \approx n_e$ going forward; we have just chosen to illustrate that this form of inter-species friction is a generalization of the resistivity you have been working with up until this point, where now the current density is given by the difference in flows between the electrons and singly-charged ions**
+    This friction is the resistivity you have been working with in the Sweet–Parker model, written in terms of the difference between the electron and ion flows that make up the current. **The simulations in these lectures leave it out: we set $\mathbf{R} = 0$, so the plasma is collisionless and our equations contain no resistivity at all.** Without resistivity, the Sweet–Parker model predicts no reconnection, a prediction we test in Lecture 2.
 
     Now we consider the tensor second moment of the Vlasov equation, switching to Einstein summation notation for clarity on the coupling to the rank-3 heat-flux tensor and neglecting the contribution from the collision operator:
     \begin{align}
@@ -205,7 +205,7 @@ def _(mo):
 
     where $\omega_{ps} = \sqrt{e^2 n_s/\epsilon_0 m_s}$ is the plasma frequency of species $s$, $d_s = c/\omega_{ps}$ is the inertial length of species $s$, $\lambda_{De} = v_{th_e}/\omega_{pe}$ is the Debye length, $\Omega_{ci} = e B_0/m_i$ is the ion cyclotron frequency, and $\rho_i = \sqrt{2} v_{th_i}/\Omega_{ci}$ is the ion gyroradius.
 
-    If we include resistivity in our 5 moment calculations, we need to specify the plasma parameter, $\Lambda \sim n \lambda_{De}^3$, to compute the collision time $\tau_{ei}$. In these normalized units, the collision time scales like
+    Our simulations leave out collisions, but adding the friction from Part 1 would require one more parameter: the plasma parameter $\Lambda \sim n \lambda_{De}^3$, which sets the collision time $\tau_{ei}$. In these normalized units, how would the collision time scale?
 
     1.   $\tau_{ei} \sim \Lambda \tilde{t}$
     2.   $\tau_{ei} \sim \ln\Lambda \tilde{t}$

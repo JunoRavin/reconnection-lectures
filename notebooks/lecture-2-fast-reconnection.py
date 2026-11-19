@@ -185,13 +185,13 @@ def _(mo):
     mo.md(r"""
     ### So what does it even mean for the reconnection to be fast?
 
-    We have now shown that our simulations obey the Sweet-Parker scalings. Good! $\texttt{Gkeyll}$ obeys conservation of mass and energy! But wait a minute, when we derived the Sweet-Parker scaling before we found the reconnection rate before, it scaled with the resistivity, meaning the in-flow velocity should be related to the Alfvén velocity by the resistivity. We know that,
+    We have now shown that our simulations obey the Sweet–Parker conservation arguments: $\texttt{Gkeyll}$ conserves mass and energy through the current sheet. The Sweet–Parker reconnection rate, however, depends on the resistivity, through the Lundquist number $S$:
     \begin{align}
     u_y \sim u_x S^{-\frac{1}{2}}, \quad S = \frac{L V_A}{\eta}
     \end{align}
-    Let's estimate this from our resistive 5 moment calculation. Given the choice of plasma parameter, $\Lambda$, and $L \sim 10 d_i$, we should get a Lundquist number of $\sim 10^5$ (try plugging in all the values for the code units; since the Lundquist number is a normalized quantity you can just use the code unit values for everything, $L, V_A, \eta$, and safely estimate the Lundquist number).
+    Our simulations have no resistivity, so $\eta = 0$, $S$ is infinite, and the Sweet–Parker model predicts that they do not reconnect at all. Even the collisional resistivity from Lecture 1, with our plasma parameter $\Lambda$ and a current sheet of length $L \sim 10 d_i$, would give a Lundquist number of about $10^5$ and an inflow of only $u_y \sim 3 \times 10^{-3} u_x$. Check this yourself: the Lundquist number is dimensionless, so you can use the code-unit values of $L$, $V_A$, and $\eta$ directly.
 
-    Well.. that is much slower than we are finding right? So what is the actual reconnection rate? We can compute this by either evaluating the reconnecting electric field $E_z$ at the X-point, or computing the rate of change of the vector potential. Either way, we see that in fact the rate is actually $\sim 0.1 V_A$, **much faster** than what Sweet and Parker estimated! In fact, this rate is the same rate fully kinetic simulations which directly solve the Vlasov equation obtain!
+    We can measure the actual reconnection rate from either the reconnecting electric field $E_z$ at the X-point or the rate of change of the vector potential there. Both peak at about $0.1 V_A$, **far faster** than the Sweet–Parker estimate, and the same rate that fully kinetic simulations, which solve the Vlasov equation directly, obtain.
     """)
     return
 
@@ -264,12 +264,12 @@ def _(mo):
     \begin{align}
     E_z = \frac{m_e}{q_e} \left (\underbrace{\frac{\partial u_{z_e}}{\partial t} + u_{x_e} \frac{\partial u_{z_e}}{\partial x} + u_{y_e} \frac{\partial u_{z_e}}{\partial y}}_{Inertia} + \frac{1}{\rho_e} \left [\frac{\partial P_{xz_e}}{\partial x} + \frac{\partial P_{yz_e}}{\partial y} \right ] \right ) - \underbrace{\left (u_{x_e} B_y - u_{y_e} B_x \right )}_{Hall} - \underbrace{\frac{m_e}{q_e \rho_e} R_z}_{Resistivity}.
     \end{align}
-    with the off-diagonal pressure tensor components vanishing for the 5 moment simulations, and no resistive contribution to the 10 moment simulations.
+    Our simulations have no friction, so the resistive term vanishes in both of them, and the off-diagonal pressure tensor components also vanish in the 5 moment simulation. That leaves electron inertia and the Hall term to support $E_z$ in the 5 moment simulation, with the pressure tensor joining them in the 10 moment simulation.
 
     Which of these terms can break field-lines?
 
     1.   Only resistivity.
-    2.   Resistivity, inertia, and Hall term can break field lines (all the terms in 5 moment).
+    2.   Resistivity, inertia, and the Hall term can break field lines.
     3.   Resistivity and the off-diagonal Pressure Tensor components.
     4.   All of the terms can break field lines.
 
