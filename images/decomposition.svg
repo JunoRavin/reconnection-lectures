@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 250" role="img" aria-labelledby="dtitle ddesc" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title id="dtitle">Splitting the simulation domain among 1, 2, or 4 processes</title>
+  <desc id="ddesc">The GEM domain drawn three times. With 1 process, one process updates the whole domain. With 2 processes (decompCuts 2 by 1), the domain is cut in half along x and each process updates one half. With 4 processes (decompCuts 2 by 2), it is cut into quarters. Arrows across each cut show neighbouring processes exchanging edge cells. The X-point at the centre of the domain sits on the cuts.</desc>
+  <defs>
+    <marker id="dah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#222"/>
+    </marker>
+    <!-- Magnetic field lines around the X-point, drawn for a domain whose top-left corner is at (0, 0) and size 280 x 140 -->
+    <g id="dfield" fill="none" stroke="#333" stroke-width="1.5" stroke-opacity="0.75">
+      <path d="M0,30 Q140,58 280,30"/>
+      <path d="M0,44 Q140,96 280,44"/>
+      <path d="M0,96 Q140,44 280,96"/>
+      <path d="M0,110 Q140,82 280,110"/>
+    </g>
+  </defs>
+
+  <!-- Panel 1: one process -->
+  <g transform="translate(20,0)">
+    <text x="140" y="30" text-anchor="middle" font-size="17" font-weight="600" fill="#222">1 process</text>
+    <g transform="translate(0,48)">
+      <rect width="280" height="140" fill="#4E79A7" fill-opacity="0.22" stroke="#4E79A7" stroke-width="2"/>
+      <use href="#dfield"/>
+      <circle cx="140" cy="70" r="4" fill="#222"/>
+      <text x="148" y="66" font-size="13" fill="#222">X-point</text>
+      <text x="8" y="134" font-size="13" fill="#2b4a6b">process 0</text>
+    </g>
+    <text x="140" y="212" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#222">decompCuts = {1, 1}</text>
+    <text x="140" y="236" text-anchor="middle" font-size="12" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#555">gkeyll rt_5m_gem.lua</text>
+  </g>
+
+  <!-- Panel 2: two processes -->
+  <g transform="translate(340,0)">
+    <text x="140" y="30" text-anchor="middle" font-size="17" font-weight="600" fill="#222">2 processes</text>
+    <g transform="translate(0,48)">
+      <rect width="140" height="140" fill="#4E79A7" fill-opacity="0.22"/>
+      <rect x="140" width="140" height="140" fill="#F28E2B" fill-opacity="0.22"/>
+      <use href="#dfield"/>
+      <rect width="280" height="140" fill="none" stroke="#555" stroke-width="2"/>
+      <line x1="140" y1="0" x2="140" y2="140" stroke="#222" stroke-width="2" stroke-dasharray="6 4"/>
+      <line x1="112" y1="128" x2="168" y2="128" stroke="#222" stroke-width="1.8" marker-start="url(#dah)" marker-end="url(#dah)"/>
+      <text x="8" y="134" font-size="13" fill="#2b4a6b">process 0</text>
+      <text x="272" y="134" text-anchor="end" font-size="13" fill="#8a4a0f">process 1</text>
+    </g>
+    <text x="140" y="212" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#222">decompCuts = {2, 1}</text>
+    <text x="140" y="236" text-anchor="middle" font-size="12" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#555">mpirun -np 2 gkeyll rt_5m_gem.lua</text>
+  </g>
+
+  <!-- Panel 3: four processes -->
+  <g transform="translate(660,0)">
+    <text x="140" y="30" text-anchor="middle" font-size="17" font-weight="600" fill="#222">4 processes</text>
+    <g transform="translate(0,48)">
+      <rect width="140" height="70" fill="#59A14F" fill-opacity="0.22"/>
+      <rect x="140" width="140" height="70" fill="#B07AA1" fill-opacity="0.22"/>
+      <rect y="70" width="140" height="70" fill="#4E79A7" fill-opacity="0.22"/>
+      <rect x="140" y="70" width="140" height="70" fill="#F28E2B" fill-opacity="0.22"/>
+      <use href="#dfield"/>
+      <rect width="280" height="140" fill="none" stroke="#555" stroke-width="2"/>
+      <line x1="140" y1="0" x2="140" y2="140" stroke="#222" stroke-width="2" stroke-dasharray="6 4"/>
+      <line x1="0" y1="70" x2="280" y2="70" stroke="#222" stroke-width="2" stroke-dasharray="6 4"/>
+      <line x1="112" y1="128" x2="168" y2="128" stroke="#222" stroke-width="1.8" marker-start="url(#dah)" marker-end="url(#dah)"/>
+      <line x1="112" y1="12" x2="168" y2="12" stroke="#222" stroke-width="1.8" marker-start="url(#dah)" marker-end="url(#dah)"/>
+      <line x1="34" y1="50" x2="34" y2="90" stroke="#222" stroke-width="1.8" marker-start="url(#dah)" marker-end="url(#dah)"/>
+      <line x1="246" y1="50" x2="246" y2="90" stroke="#222" stroke-width="1.8" marker-start="url(#dah)" marker-end="url(#dah)"/>
+      <text x="8" y="22" font-size="13" fill="#2f5e28">process 2</text>
+      <text x="272" y="22" text-anchor="end" font-size="13" fill="#6b3f63">process 3</text>
+      <text x="8" y="134" font-size="13" fill="#2b4a6b">process 0</text>
+      <text x="272" y="134" text-anchor="end" font-size="13" fill="#8a4a0f">process 1</text>
+    </g>
+    <text x="140" y="212" text-anchor="middle" font-size="14" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#222">decompCuts = {2, 2}</text>
+    <text x="140" y="236" text-anchor="middle" font-size="12" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#555">mpirun -np 4 gkeyll rt_5m_gem.lua</text>
+  </g>
+</svg>

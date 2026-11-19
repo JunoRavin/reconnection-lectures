@@ -117,19 +117,46 @@ def _(np):
 @app.cell
 def _(mo, pg):
     import os
+    import re
     from pathlib import Path
 
-    # Simulation output lives in ../runs next to this notebook, or wherever GEM_DATA_DIR points
+    # Simulation output lives in runs/ in the lecture folder, or wherever GEM_DATA_DIR points.
+    # Each simulation has its own subfolder; the last part of each path is the file name
+    # prefix Gkeyll gives its output files.
     DATA_DIR = Path(os.environ.get("GEM_DATA_DIR", mo.notebook_dir() / ".." / "runs"))
+    RUNS = {"5m": "5m_gem_mass100/rt_5m_gem", "10m": "10m_gem_mass100/rt_10m_gem"}
 
-    def get_Gdata(pre, frame):
-        data_elc = pg.load(str(DATA_DIR / ("%s-elc_%d.gkyl" % (pre, frame))))
-        data_ion = pg.load(str(DATA_DIR / ("%s-ion_%d.gkyl" % (pre, frame))))
-        data_field = pg.load(str(DATA_DIR / ("%s-field_%d.gkyl" % (pre, frame))))
+    def available_frames(run):
+        # Frames whose electron, ion, and field files all exist, so the notebook works with
+        # whatever output a run has written so far.
+        path = DATA_DIR / RUNS[run]
+        found = []
+        for f in path.parent.glob(path.name + "-field_*.gkyl"):
+            m = re.fullmatch(re.escape(path.name) + r"-field_(\d+)\.gkyl", f.name)
+            if m and all(Path(f"{path}-{s}_{m[1]}.gkyl").exists() for s in ("elc", "ion")):
+                found.append(int(m[1]))
+        return sorted(found)
 
+    def get_Gdata(run, frame):
+        path = DATA_DIR / RUNS[run]
+        data_elc = pg.load(f"{path}-elc_{frame}.gkyl")
+        data_ion = pg.load(f"{path}-ion_{frame}.gkyl")
+        data_field = pg.load(f"{path}-field_{frame}.gkyl")
         return data_elc, data_ion, data_field
 
-    return (get_Gdata,)
+    frames = {run: available_frames(run) for run in RUNS}
+    _missing = [run for run in RUNS if len(frames[run]) < 2]
+    mo.stop(
+        bool(_missing),
+        mo.callout(mo.md(
+            "**Not enough simulation output.** This lecture needs at least two frames from each "
+            f"simulation, and found too few for {' and '.join(_missing)} in `{DATA_DIR}` "
+            f"(looking for {', '.join(f'`{RUNS[r]}-*.gkyl`' for r in _missing)}). See *Running the "
+            "simulations* for how to produce them, or set `GEM_DATA_DIR` to the folder that holds "
+            "your runs."
+        ), kind="warn"),
+    )
+    return frames, get_Gdata
 
 
 @app.function
@@ -146,9 +173,9 @@ def read_data(data_elc, data_ion, data_field):
 
 
 @app.cell
-def _(get_Gdata, read_data):
+def _(frames, get_Gdata, read_data):
     # Grid size (the same for both simulations)
-    _coords, _fluid_elc, fluid_ion_0, _field = read_data(*get_Gdata('resistive_gem_mass100/rt_5m_resistive_gem', 0))
+    _coords, _fluid_elc, fluid_ion_0, _field = read_data(*get_Gdata("5m", frames["5m"][0]))
     Nx_1, Ny_1 = fluid_ion_0.shape[0], fluid_ion_0.shape[1]
     return Nx_1, Ny_1
 
@@ -158,22 +185,22 @@ def _(mo):
     mo.md(r"""
     ### So what does it even mean for the reconnection to be fast?
 
-    We have now shown that our simulations obey the Sweet-Parker scalings. Good! $\texttt{Gkeyll}$ obeys conservation of mass and energy! But wait a minute, when we derived the Sweet-Parker scaling before we found the reconnection rate before, it scaled with the resistivity, meaning the in-flow velocity should be related to the Alfvén velocity by the resistivity. We know that,
+    We have now shown that our simulations obey the Sweet–Parker conservation arguments: $\texttt{Gkeyll}$ conserves mass and energy through the current sheet. The Sweet–Parker reconnection rate, however, depends on the resistivity, through the Lundquist number $S$:
     \begin{align}
     u_y \sim u_x S^{-\frac{1}{2}}, \quad S = \frac{L V_A}{\eta}
     \end{align}
-    Let's estimate this from our resistive 5 moment calculation. Given the choice of plasma parameter, $\Lambda$, and $L \sim 10 d_i$, we should get a Lundquist number of $\sim 10^5$ (try plugging in all the values for the code units; since the Lundquist number is a normalized quantity you can just use the code unit values for everything, $L, V_A, \eta$, and safely estimate the Lundquist number).
+    Our simulations have no resistivity, so $\eta = 0$, $S$ is infinite, and the Sweet–Parker model predicts that they do not reconnect at all. Even the collisional resistivity from Lecture 1, with our plasma parameter $\Lambda$ and a current sheet of length $L \sim 10 d_i$, would give a Lundquist number of about $10^5$ and an inflow of only $u_y \sim 3 \times 10^{-3} u_x$. Check this yourself: the Lundquist number is dimensionless, so you can use the code-unit values of $L$, $V_A$, and $\eta$ directly.
 
-    Well.. that is much slower than we are finding right? So what is the actual reconnection rate? We can compute this by either evaluating the reconnecting electric field $E_z$ at the X-point, or computing the rate of change of the vector potential. Either way, we see that in fact the rate is actually $\sim 0.1 V_A$, **much faster** than what Sweet and Parker estimated! In fact, this rate is the same rate fully kinetic simulations which directly solve the Vlasov equation obtain!
+    We can measure the actual reconnection rate from either the reconnecting electric field $E_z$ at the X-point or the rate of change of the vector potential there. Both peak at about $0.1 V_A$, **far faster** than the Sweet–Parker estimate, and the same rate that fully kinetic simulations, which solve the Vlasov equation directly, obtain.
     """)
     return
 
 
 @app.cell
-def _(B0, Nx_1, Ny_1, calc_psi2d, get_Gdata, np, omega_ci, plt, vA_up):
+def _(B0, Nx_1, Ny_1, calc_psi2d, frames, get_Gdata, np, omega_ci, plt, vA_up):
     # Compute the reconnection rate
-    def compute_flux(pre, frame):
-        data_elc, data_ion, data_field = get_Gdata(pre, frame)
+    def compute_flux(run, frame):
+        data_elc, data_ion, data_field = get_Gdata(run, frame)
         r_coords, r_fluid_elc, r_fluid_ion, r_field = read_data(data_elc, data_ion, data_field)
         EzX = r_field[int(Nx_1 / 2), int(Ny_1 / 2), 2]  # Fetch Ez at X point
         dx = r_coords[0][1] - r_coords[0][0]
@@ -182,34 +209,28 @@ def _(B0, Nx_1, Ny_1, calc_psi2d, get_Gdata, np, omega_ci, plt, vA_up):
         psi = calc_psi2d(r_field[..., 3].transpose(), r_field[..., 4].transpose(), dx, dy)
         psiX = psi[int(Ny_1 / 2), int(Nx_1 / 2)]
         psi0 = np.max(np.abs(psi))
-        return (psiX, psi0, EzX)
-    num_frames = 61
-    psiX_5m = np.zeros(num_frames)
-    psi0_5m = np.zeros(num_frames)
-    EzX_5m = np.zeros(num_frames)
-    psiX_10m = np.zeros(num_frames)
-    psi0_10m = np.zeros(num_frames)
-    EzX_10m = np.zeros(num_frames)
-    t = np.linspace(0, 30 / omega_ci, num_frames)
+        return (psiX, psi0, EzX, data_field.ctx["time"])
+
+    def rate_history(run):
+        # Flux at the X-point, Ez there, and the time of every frame the run has written
+        psiX, psi0, EzX, t = np.array([compute_flux(run, f) for f in frames[run]]).T
+        dpsi_dt = np.gradient(np.abs(psi0 - psiX), t)
+        return t, dpsi_dt, EzX
+
     rate_fac = 1 / (B0 * vA_up)
-    for i in range(0, num_frames):
-        psiX_5m[i], psi0_5m[i], EzX_5m[i] = compute_flux('resistive_gem_mass100/rt_5m_resistive_gem', i)
-        psiX_10m[i], psi0_10m[i], EzX_10m[i] = compute_flux('10m_gem_mass100/rt_10m_gem', i)
-    psi_diff_5m = np.abs(psi0_5m - psiX_5m)
-    dpsi_dt_5m = np.gradient(psi_diff_5m, t)  # Compute the flux at the X-point in resistive 5 moment simulation
-    psi_diff_10m = np.abs(psi0_10m - psiX_10m)
-    dpsi_dt_10m = np.gradient(psi_diff_10m, t)  # Compute the flux at the X-point in 10 moment simulation
+    t_5m, dpsi_dt_5m, EzX_5m = rate_history("5m")
+    t_10m, dpsi_dt_10m, EzX_10m = rate_history("10m")
     plt.figure()
-    plt.plot(t * omega_ci, np.abs(dpsi_dt_5m) * rate_fac, 'k-', label='5m, $d\\psi/dt$')
-    # We can either use Ez or the time derivative of the vector potential psi to estimate the reconnection rate. 
-    plt.plot(t * omega_ci, np.abs(EzX_5m) * rate_fac, 'k--', label='5m, $E_z$')
-    plt.plot(t * omega_ci, np.abs(dpsi_dt_10m) * rate_fac, 'b-', label='10m, $d\\psi/dt$')
-    plt.plot(t * omega_ci, np.abs(EzX_10m) * rate_fac, 'b--', label='10m, $E_z$')
+    plt.plot(t_5m * omega_ci, np.abs(dpsi_dt_5m) * rate_fac, 'k-', label='5m, $d\\psi/dt$')
+    # We can either use Ez or the time derivative of the vector potential psi to estimate the reconnection rate.
+    plt.plot(t_5m * omega_ci, np.abs(EzX_5m) * rate_fac, 'k--', label='5m, $E_z$')
+    plt.plot(t_10m * omega_ci, np.abs(dpsi_dt_10m) * rate_fac, 'b-', label='10m, $d\\psi/dt$')
+    plt.plot(t_10m * omega_ci, np.abs(EzX_10m) * rate_fac, 'b--', label='10m, $E_z$')
     plt.xlabel('$t \\Omega_{ci}$')
     plt.ylabel('$E_z/(v_A B_0)$')
     plt.legend(loc='best')
     plt.show()
-    return
+    return (t_5m,)
 
 
 @app.cell(hide_code=True)
@@ -243,12 +264,12 @@ def _(mo):
     \begin{align}
     E_z = \frac{m_e}{q_e} \left (\underbrace{\frac{\partial u_{z_e}}{\partial t} + u_{x_e} \frac{\partial u_{z_e}}{\partial x} + u_{y_e} \frac{\partial u_{z_e}}{\partial y}}_{Inertia} + \frac{1}{\rho_e} \left [\frac{\partial P_{xz_e}}{\partial x} + \frac{\partial P_{yz_e}}{\partial y} \right ] \right ) - \underbrace{\left (u_{x_e} B_y - u_{y_e} B_x \right )}_{Hall} - \underbrace{\frac{m_e}{q_e \rho_e} R_z}_{Resistivity}.
     \end{align}
-    with the off-diagonal pressure tensor components vanishing for the 5 moment simulations, and no resistive contribution to the 10 moment simulations.
+    Our simulations have no friction, so the resistive term vanishes in both of them, and the off-diagonal pressure tensor components also vanish in the 5 moment simulation. That leaves electron inertia and the Hall term to support $E_z$ in the 5 moment simulation, with the pressure tensor joining them in the 10 moment simulation.
 
     Which of these terms can break field-lines?
 
     1.   Only resistivity.
-    2.   Resistivity, inertia, and Hall term can break field lines (all the terms in 5 moment).
+    2.   Resistivity, inertia, and the Hall term can break field lines.
     3.   Resistivity and the off-diagonal Pressure Tensor components.
     4.   All of the terms can break field lines.
 
@@ -290,7 +311,7 @@ def _(
     np,
 ):
     def ohm_10m(frame):
-        data_elc, data_ion, data_field = get_Gdata("10m_gem_mass100/rt_10m_gem", frame)
+        data_elc, data_ion, data_field = get_Gdata("10m", frame)
         r_coords, r_fluid_elc, r_fluid_ion, r_field = read_data(data_elc, data_ion, data_field)
         Nx = r_fluid_ion.shape[0]
         Ny = r_fluid_ion.shape[1]    
@@ -334,27 +355,22 @@ def _(
 @app.cell
 def _(
     five_moment,
-    Lambda_ee,
-    T_elc_ref,
     charge_elc,
     fdx_2d_8th_order,
     fdy_2d_8th_order,
-    gas_gamma,
     get_Gdata,
     mass_elc,
-    mass_ion,
     np,
 ):
     def ohm_5m(frame):
-        data_elc, data_ion, data_field = get_Gdata("resistive_gem_mass100/rt_5m_resistive_gem", frame)
+        data_elc, data_ion, data_field = get_Gdata("5m", frame)
         r_coords, r_fluid_elc, r_fluid_ion, r_field = read_data(data_elc, data_ion, data_field)
         Nx = r_fluid_ion.shape[0]
-        Ny = r_fluid_ion.shape[1]    
+        Ny = r_fluid_ion.shape[1]
         dx = r_coords[0][1] - r_coords[0][0]
         dy = r_coords[1][1] - r_coords[1][0]
         # Compute Hall term
         rho_elc = r_fluid_elc[...,0]
-        rho_ion = r_fluid_ion[...,0]
         rhoux_elc = r_fluid_elc[..., 1]
         rhouy_elc = r_fluid_elc[..., 2]
         Bx = r_field[...,3]
@@ -365,15 +381,8 @@ def _(
         # Fetch Ez
         Ez = r_field[...,2]
 
-        # Compute resistivity
-        uz_elc = five_moment.zvel(data_elc).get_values()
-        uz_ion = five_moment.zvel(data_ion).get_values()
-        T_elc = five_moment.temp(data_elc, gas_gamma=gas_gamma).get_values()
-        uz_elc = np.squeeze(uz_elc)
-        uz_ion = np.squeeze(uz_ion)
-        T_elc_norm = np.squeeze(T_elc/T_elc_ref)
-        tau_ei = Lambda_ee/np.log(Lambda_ee)*6.0*np.sqrt(2.0*np.pi**3*T_elc_norm**3*mass_elc*mass_ion**2)/rho_ion
-        eta_z =  (-rho_elc/tau_ei*(uz_elc - uz_ion))/(charge_elc/mass_elc*rho_elc)
+        # Out-of-plane electron velocity
+        uz_elc = np.squeeze(five_moment.zvel(data_elc).get_values())
 
         # Compute 1/(q/m rho) (rhou_x du_z/dx + rhou_y du_z/dy)
         divRxz_elc = fdx_2d_8th_order(uz_elc, dx, Nx, Ny)
@@ -382,20 +391,37 @@ def _(
         divRxz_elc = rhoux_elc*divRxz_elc/(charge_elc/mass_elc*rho_elc)
         divRyz_elc = rhouy_elc*divRyz_elc/(charge_elc/mass_elc*rho_elc) 
     
-        return r_coords, Ez, hallz, eta_z, divRxz_elc, divRyz_elc
+        return r_coords, Ez, hallz, divRxz_elc, divRyz_elc
 
     return (ohm_5m,)
 
 
 @app.cell
-def _(Nx_1, di, ohm_5m, plt):
-    _coords, _Ez, _hallz, eta_z, _divRxz_elc, _divRyz_elc = ohm_5m(40)
-    _sum_ohm = -_hallz - eta_z + _divRxz_elc + _divRyz_elc
+def _(frames, mo, np, omega_ci, t_5m):
+    # Pick the frame for the Ohm's law analysis: one both simulations have written, starting
+    # at the one closest to t = 20/Omega_ci (well into the fast reconnection phase).
+    _common = sorted(set(frames["5m"]) & set(frames["10m"]))
+    frame_time = dict(zip(frames["5m"], t_5m))
+    _start = min(_common, key=lambda f: abs(frame_time[f] * omega_ci - 20.0))
+    ohm_frame = mo.ui.slider(steps=_common, value=_start, label="Frame for Ohm's law", show_value=True)
+    ohm_frame
+    return frame_time, ohm_frame
+
+
+@app.cell
+def _(frame_time, mo, ohm_frame, omega_ci):
+    mo.md(f"Frame {ohm_frame.value} is at $t = {frame_time[ohm_frame.value] * omega_ci:.1f}\\, \\Omega_{{ci}}^{{-1}}$.")
+    return
+
+
+@app.cell
+def _(Nx_1, di, ohm_5m, ohm_frame, plt):
+    _coords, _Ez, _hallz, _divRxz_elc, _divRyz_elc = ohm_5m(ohm_frame.value)
+    _sum_ohm = -_hallz + _divRxz_elc + _divRyz_elc
     _x_point = int(Nx_1 / 2)
     plt.figure()
     plt.plot(_coords[1] / di, _Ez[_x_point, :], 'k', label='$E_z$')
     plt.plot(_coords[1] / di, -_hallz[_x_point, :], 'r', label='$-u_e x B$')
-    plt.plot(_coords[1] / di, -eta_z[_x_point, :], 'b', label='$-1/(qn) \\eta J_z$')
     plt.plot(_coords[1] / di, _divRxz_elc[_x_point, :], 'y', label='$u_x \\partial_x u_z$')
     plt.plot(_coords[1] / di, _divRyz_elc[_x_point, :], 'c', label='$u_y \\partial_y u_z$')
     plt.plot(_coords[1] / di, _sum_ohm[_x_point, :], 'm', label='Sum')
@@ -405,7 +431,6 @@ def _(Nx_1, di, ohm_5m, plt):
     plt.figure()
     plt.plot(_coords[1] / di, _Ez[_x_point, :], 'k', label='$E_z$')
     plt.plot(_coords[1] / di, -_hallz[_x_point, :], 'r', label='$-u_e x B$')
-    plt.plot(_coords[1] / di, -eta_z[_x_point, :], 'b', label='$-1/(qn) \\eta J_z$')
     plt.plot(_coords[1] / di, _divRxz_elc[_x_point, :], 'y', label='$u_x \\partial_x u_z$')
     plt.plot(_coords[1] / di, _divRyz_elc[_x_point, :], 'c', label='$u_y \\partial_y u_z$')
     plt.plot(_coords[1] / di, _sum_ohm[_x_point, :], 'm', label='Sum')
@@ -417,8 +442,8 @@ def _(Nx_1, di, ohm_5m, plt):
 
 
 @app.cell
-def _(Nx_1, di, ohm_10m, plt):
-    _coords, _Ez, _hallz, divPxz_elc, divPyz_elc, _divRxz_elc, _divRyz_elc = ohm_10m(40)
+def _(Nx_1, di, ohm_10m, ohm_frame, plt):
+    _coords, _Ez, _hallz, divPxz_elc, divPyz_elc, _divRxz_elc, _divRyz_elc = ohm_10m(ohm_frame.value)
     _sum_ohm = -_hallz + divPxz_elc + divPyz_elc + _divRxz_elc + _divRyz_elc
     _x_point = int(Nx_1 / 2)
     plt.figure()

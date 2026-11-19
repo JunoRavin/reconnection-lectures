@@ -39,12 +39,21 @@ Te_frac = 1.0 / (1.0 + Ti_over_Te) -- Fraction of total temperature from electro
 T_tot = beta * (B0 * B0) / 2.0 / n0 -- Total temperature.
 
 -- Simulation parameters.
-Nx = 1344 -- Cell count (x-direction).
-Ny = 672 -- Cell count (y-direction).
+Nx = 448 -- Cell count (x-direction).
+Ny = 224 -- Cell count (y-direction).
 Lx = 25.6 * di -- Domain size (x-direction).
 Ly = 12.8 * di -- Domain size (y-direction).
 k0 = 1.0/de -- Closure parameter.
 cfl_frac = 1.0 -- CFL coefficient.
+
+-- Parallel decomposition. When you start Gkeyll with "mpirun -np N", Open MPI
+-- tells each of the N processes how many there are (OMPI_COMM_WORLD_SIZE);
+-- without mpirun, Gkeyll runs as a single process. decompCuts splits the
+-- domain into cuts_x pieces along x and cuts_y pieces along y, one piece per
+-- process, so cuts_x * cuts_y must equal N.
+num_procs = tonumber(os.getenv("OMPI_COMM_WORLD_SIZE") or "1")
+decomp_for_procs = { [1] = { 1, 1 }, [2] = { 2, 1 }, [4] = { 2, 2 }, [8] = { 4, 2 } }
+decomp_cuts = decomp_for_procs[num_procs] or { num_procs, 1 }
 
 t_end = 30.0/omega_ci -- Final simulation time.
 num_frames = 60 -- Number of output frames.
@@ -65,7 +74,7 @@ momentApp = Moments.App.new {
   upper = { 0.5 * Lx, 0.5 * Ly },
   cells = { Nx, Ny },
   cflFrac = cfl_frac,
-  decompCuts = {56, 32}, 
+  decompCuts = decomp_cuts, 
   
   -- Boundary conditions for configuration space.
   periodicDirs = { 1 }, -- Periodic directions (x-direction only).
