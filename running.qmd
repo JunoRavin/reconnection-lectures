@@ -83,20 +83,14 @@ $T_4$. The speedup on $N$ processes is $S_N = T_1/T_N$, and the parallel
 efficiency is $E_N = S_N/N$: an efficiency of 100% means the processes never
 wait for each other.
 
-For comparison, here is what we measured on a 2021 MacBook Pro (Apple M1 Max),
-for the 448 × 224 grid the input files use and for a much smaller 128 × 64
-grid:
+For comparison, these are the times we measured for the same three runs on a
+2021 MacBook Pro (Apple M1 Max):
 
-| Grid | $T_1$ | $T_2$ | $T_4$ | $S_2$ | $S_4$ | $E_4$ |
-|------|------:|------:|------:|------:|------:|------:|
-| 448 × 224, 400 steps | 41.5 s | 21.4 s | 11.0 s | 1.94 | 3.78 | 95% |
-| 128 × 64, 3000 steps | 24.1 s | 12.8 s | 7.3 s | 1.88 | 3.32 | 83% |
-
-The small grid gains less from four processes because each process has fewer
-cells to update for the same number of edge cells to exchange. To see this on
-your laptop, set `Nx = 128` and `Ny = 64` near the top of the copy of
-`rt_5m_gem.lua` in `~/gkeyll-scaling`, and repeat the three runs with
-`-s 3000`.
+|            | 1 process | 2 processes | 4 processes |
+|------------|----------:|------------:|------------:|
+| Time       | 41.5 s    | 21.4 s      | 11.0 s      |
+| Speedup    | 1         | 1.94        | 3.78        |
+| Efficiency | 100%      | 97%         | 95%         |
 
 Your own numbers may be lower, for three reasons. Many laptop processors mix
 fast and slow ("efficiency") cores, and a process that lands on a slow core
@@ -135,31 +129,11 @@ sleep pauses it. On macOS, putting `caffeinate -i` in front of the command
 (`caffeinate -i mpirun -np 4 gkeyll rt_5m_gem.lua`) stops the laptop from
 falling asleep while it sits idle until the simulation finishes.
 
-### Choosing the resolution
-
-The input files use a 448 × 224 grid, about half an electron inertial length
-$d_e$ per cell. On this grid the peak reconnection rate comes out within about
-5% of a 672 × 336 simulation, and the 10m peak within about 6% of the
-1344 × 672 simulation in the lectures. To change the grid, edit `Nx` and `Ny`
-near the top of both input files, keeping `Nx = 2 * Ny`. Doubling both makes
-each time step four times as expensive and halves the time step, so a run
-takes about eight times longer. The table gives run times on the M1 Max with
-4 processes, projected from timing a few hundred steps of each, and the disk
-space for all 61 frames of both simulations:
-
-| Grid | Cell size | 5m run | 10m run | Disk (both) |
-|------|----------:|-------:|--------:|------------:|
-| 448 × 224 | 0.57 $d_e$ | 5 min | 7 min | 2.2 GB |
-| 672 × 336 | 0.38 $d_e$ | 17 min | 24 min | 5.1 GB |
-| 896 × 448 | 0.29 $d_e$ | 44 min | 61 min | 9 GB |
-| 1344 × 672 | 0.19 $d_e$ | 2.4 h | 3.5 h | 20 GB |
-
-The figures on this website come from 1344 × 672 simulations run on a
-cluster.
-
 ## 5. Open the lecture notebooks
 
-Start marimo from the lecture folder with the Python environment active:
+The lecture notebooks are Python programs that run inside marimo, in your web
+browser. Start marimo from the lecture folder with the Python environment
+active:
 
 ```bash
 cd ~/reconnection-lectures
@@ -167,10 +141,31 @@ source .venv/bin/activate
 marimo edit notebooks/lecture-1-sweet-parker.py
 ```
 
-marimo opens the notebook in your web browser. Lecture 1 needs the 5m
-simulation and Lecture 2 needs both. The notebooks use whatever frames a
-simulation has written, so you can open them while the 10m simulation is still
-running and re-run the cells later to pick up new frames.
+marimo prints the address of the notebook, in a line like
+
+```
+➜  URL: http://localhost:2718?access_token=...
+```
+
+and on macOS opens it in your web browser. On WSL and on Linux systems without
+a desktop, no browser opens: copy the whole address, including the access
+token, into your web browser (on Windows, any browser works). Leave the
+terminal open while you work, and press Ctrl+C in it when you are done.
+
+Type the notebooks' Python code, such as `import marimo as mo`, only into
+marimo, never into the terminal, which runs shell commands rather than
+Python. On Ubuntu and WSL, typing `import` into the terminal makes Ubuntu offer
+to install a package (ImageMagick) whose own `import` command then fails with
+`unable to open X server`. If you installed it that way, it does no harm, but
+you can remove it:
+
+```bash
+sudo apt remove graphicsmagick-imagemagick-compat imagemagick-6.q16 imagemagick-6.q16hdri
+```
+
+Lecture 1 needs the 5m simulation and Lecture 2 needs both. The notebooks use
+whatever frames a simulation has written, so you can open them while the 10m
+simulation is still running and re-run the cells later to pick up new frames.
 
 If you keep your simulations somewhere else, point the notebooks at the folder
 that contains `5m_gem_mass100` and `10m_gem_mass100`:
@@ -180,3 +175,27 @@ cd ~/reconnection-lectures
 source .venv/bin/activate
 GEM_DATA_DIR=/path/to/your/runs marimo edit notebooks/lecture-1-sweet-parker.py
 ```
+
+## 6. Things to explore
+
+The simulations as set up in the input files are all the lectures need. Once
+you have worked through them, these experiments show how the results depend
+on choices you can change.
+
+Use the frame sliders to look at other times. Lecture 2's slider moves the
+Ohm's law analysis: which terms support the reconnection electric field
+before, during, and after the peak reconnection rate, and do the 5m and 10m
+simulations agree?
+
+Change the grid. `Nx` and `Ny` near the top of each input file set the number
+of cells; keep `Nx = 2 * Ny`. Run both simulations on a coarser grid, in new
+folders so you keep your original output, and compare the reconnection rate
+in Lecture 2 with your original runs. Every time you double `Nx` and `Ny`, a
+run takes about eight times longer and writes four times as much output,
+because each step updates four times as many cells and the time step halves.
+
+Repeat the speedup measurement on a smaller grid. In the copy of
+`rt_5m_gem.lua` in `~/gkeyll-scaling`, divide `Nx` and `Ny` by four and run
+more steps (`-s 3000`) so each run still takes several seconds. Does a
+smaller grid gain as much from four processes? The ghost-cell picture in
+section 2 explains what you see.
